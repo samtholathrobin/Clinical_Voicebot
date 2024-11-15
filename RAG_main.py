@@ -1,19 +1,16 @@
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import LanceDB
 from langchain_ollama import OllamaEmbeddings
 from langchain.docstore.document import Document
-from langchain_ollamaw import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-
-import time
-
-st=time.time()
+from Crypto.Cipher import AES
 
 RAG_TEMPLATE = """
 You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
@@ -55,7 +52,7 @@ data = [Document(page_content=input_data, metadata={"source": "Mistral Large"})]
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=0) #chunk_size can be optimized we can introduce overlap
 all_splits = text_splitter.split_documents(data)
 local_embeddings = OllamaEmbeddings(model="nomic-embed-text")
-vectorstore = Chroma.from_documents(documents=all_splits, embedding=local_embeddings)
+vectorstore = LanceDB.from_documents(documents=all_splits, embedding=local_embeddings)
 model = ChatOllama(model="llama3.1:8b")
 rag_prompt = ChatPromptTemplate.from_template(RAG_TEMPLATE)
 chain = (
@@ -64,8 +61,9 @@ chain = (
     | model
     | StrOutputParser()
 )
-
-print(time.time()-st) # TIME CHECK FOR SETUP
+key = b'Sixteen byte key'
+cipher = AES.new(key, AES.MODE_EAX)
+nonce = cipher.nonce
 print("-------------------------------- READY TO RUMBLE --------------------------------")
 
 app = FastAPI()

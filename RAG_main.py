@@ -1,4 +1,3 @@
-from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import LanceDB
 from langchain_ollama import OllamaEmbeddings
@@ -11,6 +10,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad,unpad
+import base64
 
 RAG_TEMPLATE = """
 You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
@@ -61,9 +62,10 @@ chain = (
     | model
     | StrOutputParser()
 )
-key = b'Sixteen byte key'
-cipher = AES.new(key, AES.MODE_EAX)
-nonce = cipher.nonce
+KEY = b'SamAbelAashuSang'
+IV = b'Something Better'
+CIPHER = AES.new(KEY, AES.MODE_CBC, IV)
+
 print("-------------------------------- READY TO RUMBLE --------------------------------")
 
 app = FastAPI()
@@ -82,14 +84,25 @@ async def root():
 
 @app.post("/qa/")
 async def create_item(item:Item):
+
+    global CIPHER
     i_dict=item.model_dump()
 
     if item.question:
         qn=str(item.question)
-        response=invoke_RAG(qn)
+        print("Call Recieved")
+        qn=base64.b64decode(qn)
+        de_qn = unpad(CIPHER.decrypt(qn), AES.block_size).decode("ascii")
+        print(f'Decrypted Question : {de_qn}')
+        response=invoke_RAG(de_qn)
     else:
         response="No Question Found!!"
 
-    i_dict.update({"answer": response})
-    print(response)
+    print(f'Response : {response}')
+    print("Encrypting with AES")
+    CIPHER = AES.new(KEY, AES.MODE_CBC, IV)
+    ciphertext = CIPHER.encrypt(pad(response.encode('ascii'), AES.block_size))
+    b64_response = base64.b64encode(ciphertext).decode("ascii")
+
+    i_dict.update({"answer": b64_response})
     return i_dict

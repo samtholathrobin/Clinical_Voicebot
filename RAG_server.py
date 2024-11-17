@@ -57,7 +57,7 @@ def add_data(text):
     updated_content = input_data + '\n' + text
     with open(FILE_PATH, 'w') as file:
         file.write(updated_content)
-
+ 
 def invoke_RAG(question):
     print("Searching for similar documents")
     docs = vectorstore.similarity_search(question)

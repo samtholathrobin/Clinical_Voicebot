@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
-
+ 
 # RAG Template
 RAG_TEMPLATE = """
 You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. 

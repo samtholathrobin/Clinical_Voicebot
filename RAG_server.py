@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
- 
+
 # RAG Template
 RAG_TEMPLATE = """
 You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. 
@@ -31,7 +31,7 @@ FILE_PATH = "clinical_data.txt"
 
 #Cipher class so that they dont use the same object every time but create a new one.
 class AESCipher:
-    def _init_(self, key, iv):
+    def __init__(self, key, iv):
         self.key = key
         self.iv = iv
 
@@ -57,7 +57,7 @@ def add_data(text):
     updated_content = input_data + '\n' + text
     with open(FILE_PATH, 'w') as file:
         file.write(updated_content)
- 
+
 def invoke_RAG(question):
     print("Searching for similar documents")
     docs = vectorstore.similarity_search(question)
@@ -76,7 +76,7 @@ with open(FILE_PATH, 'r') as file:
     input_data = file.read()
 
 data = [Document(page_content=input_data, metadata={"source": "Mistral Large"})]
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=0)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
 local_embeddings = OllamaEmbeddings(model="nomic-embed-text")
 vectorstore = LanceDB.from_documents(documents=all_splits, embedding=local_embeddings)
